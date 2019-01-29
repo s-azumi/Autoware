@@ -47,3 +47,15 @@ Replace `PATH_TO_MODEL` to the actual path of the pretrained tensorflow tar file
 |`model_path`|Positional, *String* |Path to the tar file containing the frozen Tensorflow pretrained model.|
 |`--image_src`|Flag, *String*|Non-Maximum suppresion area threshold ratio to merge proposals. Default `/image_raw`.|
 |`--label_format`|Flag, *String*|Label format of the provided model. Currently `pascal` or `cityscapes`. Default `pascal`.|
+
+### Subscribed topics
+
+|Topic|Type|Objective|
+------|----|---------
+|`/image_raw`|`sensor_msgs/Image`|Source image stream to perform detection.|
+
+### Published topics
+
+|Topic|Type|Objective|
+------|----|---------
+|`/image_segmented`|`sensor_msgs/Image`|Segmented image.|
