@@ -18,6 +18,7 @@
 #include <thread>
 
 #include <ros/ros.h>
+#include <std_msgs/Float32.h>
 #include <autoware_msgs/VehicleCmd.h>
 #include <autoware_msgs/VehicleStatus.h>
 #include <ds4_msgs/DS4.h>
@@ -34,6 +35,7 @@ ros::Subscriber ds4_sub_;
 // ros publisher
 ros::Publisher current_twist_pub_;
 ros::Publisher vehicle_status_pub_;
+ros::Publisher battery_pub_;
 
 // ros param
 std::string device_;
@@ -317,10 +319,13 @@ void readStatus()
 // publish vehicle status
 void publishStatus()
 {
+  std_msgs::Float32 battery;
   while (!terminate_thread_)
   {
+    battery.data = status_.battery.charge;
     current_twist_pub_.publish(current_twist_);
     vehicle_status_pub_.publish(vehicle_status_);
+    battery_pub_.publish(battery);
     usleep(10000);
   }
 }
@@ -352,6 +357,7 @@ int main(int argc, char* argv[])
   // publisher
   current_twist_pub_ = nh_.advertise<geometry_msgs::TwistStamped>("ymc_current_twist", 10);
   vehicle_status_pub_ = nh_.advertise<autoware_msgs::VehicleStatus>("vehicle_status", 10);
+  battery_pub_ = nh_.advertise<std_msgs::Float32>("ymc_battery", 10);
 
   // open can device
   if (!g30esli_.openDevice(device_))
