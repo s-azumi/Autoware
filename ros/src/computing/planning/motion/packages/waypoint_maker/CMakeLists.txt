@@ -77,6 +77,13 @@ target_link_libraries(waypoint_velocity_visualizer ${catkin_LIBRARIES} ${Boost_L
 add_dependencies(waypoint_velocity_visualizer
         ${catkin_EXPORTED_TARGETS})
 
+add_executable(waypoint_editor
+        nodes/waypoint_editor/waypoint_handler_marker.cpp
+        nodes/waypoint_editor/waypoint_editor.cpp 
+        nodes/waypoint_editor/waypoint_editor_node.cpp)
+target_link_libraries(waypoint_editor ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(waypoint_editor ${catkin_EXPORTED_TARGETS})
+
 install(TARGETS
         waypoint_loader
         waypoint_replanner
@@ -84,6 +91,7 @@ install(TARGETS
         waypoint_clicker
         waypoint_marker_publisher
         waypoint_velocity_visualizer
+        waypoint_editor
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
