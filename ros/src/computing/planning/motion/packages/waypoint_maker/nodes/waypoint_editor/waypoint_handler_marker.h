@@ -33,12 +33,19 @@
 class WaypointHandlerMarker
 {
 public:
-    WaypointHandlerMarker(interactive_markers::InteractiveMarkerServer& server_,int marker_id);
+    WaypointHandlerMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server_ptr,int marker_id);
     ~WaypointHandlerMarker();
+    void updateMarkerId(int marker_id);
 private:
+    boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server_ptr_;
+    void initMenu();
+    int marker_id_;
     void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
     visualization_msgs::Marker makeArrow(visualization_msgs::InteractiveMarker &msg);
     visualization_msgs::InteractiveMarkerControl& makeBoxControl(visualization_msgs::InteractiveMarker &msg);
+    interactive_markers::MenuHandler menu_handler_;
+    interactive_markers::MenuHandler::EntryHandle add_handler_entry_;
+    void addHandlerCallback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
 };
 
 #endif  //WAYPOINT_HANDLER_MARKER_H_INCLUDED

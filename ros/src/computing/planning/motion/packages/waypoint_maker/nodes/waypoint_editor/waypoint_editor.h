@@ -21,8 +21,9 @@
 #include <ros/ros.h>
 #include "waypoint_handler_marker.h"
 
-//headers in stl
+//headers in boost
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
 
 class WaypointEditor
 {
@@ -30,7 +31,7 @@ public:
     WaypointEditor(ros::NodeHandle nh,ros::NodeHandle pnh);
     ~WaypointEditor();
 private:
-    interactive_markers::InteractiveMarkerServer server_;
+    boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server_ptr_;
     void addMarker(int marker_id);
     std::vector<WaypointHandlerMarker> markers_;
 };

@@ -19,9 +19,10 @@
 
 #include "waypoint_editor.h"
 
-WaypointEditor::WaypointEditor(ros::NodeHandle nh,ros::NodeHandle pnh) : server_("waypoint_editor")
+WaypointEditor::WaypointEditor(ros::NodeHandle nh,ros::NodeHandle pnh)
 {
-    WaypointHandlerMarker marker(server_,0);
+    server_ptr_ = boost::make_shared<interactive_markers::InteractiveMarkerServer>("waypoint_editor");
+    WaypointHandlerMarker marker(server_ptr_,0);
     markers_.push_back(marker);
 }
 
