@@ -5,8 +5,7 @@ catkin_package()
 
 
 install(PROGRAMS
-  src/odometry_to_posestamped
-  src/vehiclecmd_to_ackermanndrive
+  src/carla_autoware_waypoint_publisher
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
