@@ -1,0 +1,7 @@
+<launch>
+
+  <!-- pcl recorder -->
+  <node pkg="pcl_recorder" type="pcl_recorder_node" name="pcl_recorder_node" output="screen"/>
+
+</launch>
+

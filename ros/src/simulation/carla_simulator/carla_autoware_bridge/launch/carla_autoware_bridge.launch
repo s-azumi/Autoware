@@ -1,0 +1,9 @@
+<launch>
+  <!-- carla client -->
+  <include file="$(find carla_client)/launch/carla_client.launch" />
+
+  <!-- common -->
+  <include file="$(find carla_autoware_bridge)/launch/carla_autoware_bridge_common.launch" />
+
+</launch>
+
