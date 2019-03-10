@@ -84,6 +84,9 @@ private:
   vector_map::VectorMap vmap_;
   std::vector<vector_map_msgs::Lane> lanes_;
 
+  // for estimated pose assisted tracking
+  bool use_estimated_pose_ = false;
+
   double merge_distance_threshold_;
   const double CENTROID_DISTANCE = 0.2;//distance to consider centroids the same
 
@@ -146,11 +149,15 @@ private:
   void tracker(const autoware_msgs::DetectedObjectArray& transformed_input,
                autoware_msgs::DetectedObjectArray& detected_objects_output);
 
-  bool updateDirection(const double smallest_nis, const autoware_msgs::DetectedObject& in_object,
+  bool updateDirection(const double smallest_nis, const int direction_type, const autoware_msgs::DetectedObject& in_object,
                            autoware_msgs::DetectedObject& out_object, UKF& target);
 
   bool storeObjectWithNearestLaneDirection(const autoware_msgs::DetectedObject& in_object,
                                       autoware_msgs::DetectedObject& out_object);
+
+  void modifyPoseByTrackedPose(const autoware_msgs::DetectedObject& in_object,
+                               const UKF& in_target,
+                                     autoware_msgs::DetectedObject& out_object);
 
   void checkVectormapSubscription();
 

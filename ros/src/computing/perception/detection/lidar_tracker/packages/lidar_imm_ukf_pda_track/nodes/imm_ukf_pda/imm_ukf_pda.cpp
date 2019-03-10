@@ -50,6 +50,9 @@ ImmUkfPda::ImmUkfPda()
     result_file_path_ = kitti_data_dir_ + "benchmark_results.txt";
     std::remove(result_file_path_.c_str());
   }
+
+  // for estimated pose assisted tracking
+  private_nh_.param<bool>("use_estimated_pose", use_estimated_pose_, true);
 }
 
 void ImmUkfPda::run()
@@ -221,11 +224,11 @@ void ImmUkfPda::measurementValidation(const autoware_msgs::DetectedObjectArray& 
   if (exists_smallest_nis_object)
   {
     matching_vec[smallest_nis_ind] = true;
+    autoware_msgs::DetectedObject direction_updated_object;
     if (use_vectormap_ && has_subscribed_vectormap_)
     {
-      autoware_msgs::DetectedObject direction_updated_object;
       bool use_direction_meas =
-          updateDirection(smallest_nis, target.object_, direction_updated_object, target);
+          updateDirection(smallest_nis, DirectionType::Lane, target.object_, direction_updated_object, target);
       if (use_direction_meas)
       {
         object_vec.push_back(direction_updated_object);
@@ -235,6 +238,11 @@ void ImmUkfPda::measurementValidation(const autoware_msgs::DetectedObjectArray& 
         object_vec.push_back(target.object_);
       }
     }
+    else if(use_estimated_pose_)
+    {
+      updateDirection(smallest_nis, DirectionType::Pose, target.object_, direction_updated_object, target);
+      object_vec.push_back(direction_updated_object);
+    }
     else
     {
       object_vec.push_back(target.object_);
@@ -242,23 +250,49 @@ void ImmUkfPda::measurementValidation(const autoware_msgs::DetectedObjectArray& 
   }
 }
 
-bool ImmUkfPda::updateDirection(const double smallest_nis, const autoware_msgs::DetectedObject& in_object,
+bool ImmUkfPda::updateDirection(const double smallest_nis, const int direction_type, const autoware_msgs::DetectedObject& in_object,
                                     autoware_msgs::DetectedObject& out_object, UKF& target)
 {
-  bool use_lane_direction = false;
+  bool use_direction = false;
   target.is_direction_cv_available_ = false;
   target.is_direction_ctrv_available_ = false;
-  bool get_lane_success = storeObjectWithNearestLaneDirection(in_object, out_object);
-  if (!get_lane_success)
+  if(direction_type == DirectionType::Lane)
   {
-    return use_lane_direction;
+    bool get_lane_success = storeObjectWithNearestLaneDirection(in_object, out_object);
+    if (!get_lane_success)
+    {
+      return use_direction;
+    }
+    target.checkLaneDirectionAvailability(out_object, lane_direction_chi_thres_, use_sukf_);
+    if (target.is_direction_cv_available_ || target.is_direction_ctrv_available_)
+    {
+      use_direction = true;
+    }
   }
-  target.checkLaneDirectionAvailability(out_object, lane_direction_chi_thres_, use_sukf_);
-  if (target.is_direction_cv_available_ || target.is_direction_ctrv_available_)
+  else if(direction_type == DirectionType::Pose)
   {
-    use_lane_direction = true;
+    modifyPoseByTrackedPose(in_object, target,   out_object);
+    target.is_direction_cv_available_ = true;
+    target.is_direction_ctrv_available_ = true;
+    use_direction = true;
   }
-  return use_lane_direction;
+  return use_direction;
+
+}
+
+void ImmUkfPda::modifyPoseByTrackedPose(const autoware_msgs::DetectedObject& in_object,
+                                        const UKF& in_target,
+                                              autoware_msgs::DetectedObject& out_object)
+{
+  double pose_yaw = tf::getYaw(in_object.pose.orientation);
+  double tracked_yaw = in_target.x_merge_(3);
+  double abs_diff_yaw = std::fabs(pose_yaw - tracked_yaw);
+  if(abs_diff_yaw > M_PI)
+  {
+    pose_yaw -= M_PI;
+  }
+  out_object = in_object;
+  out_object.pose.orientation = tf::createQuaternionMsgFromYaw(pose_yaw);
 }
 
 bool ImmUkfPda::storeObjectWithNearestLaneDirection(const autoware_msgs::DetectedObject& in_object,

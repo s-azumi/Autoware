@@ -43,6 +43,12 @@ enum MotionModel : int
   RM = 2,    // random motion
 };
 
+enum DirectionType: int
+{
+  Lane = 0,    // Use of direction from lane
+  Pose = 1,    // Use of direction from estimated pose
+};
+
 class UKF
 {
   /*
