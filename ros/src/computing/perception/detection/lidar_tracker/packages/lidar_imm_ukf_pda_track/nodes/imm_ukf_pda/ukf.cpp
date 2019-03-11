@@ -409,7 +409,7 @@ void UKF::predictionSUKF(const double dt, const bool has_subscribed_vectormap)
   }
 }
 
-void UKF::predictionIMMUKF(const double dt, const bool has_subscribed_vectormap)
+void UKF::predictionIMMUKF(const double dt, const bool has_subscribed_vectormap, const bool use_estimated_pose)
 {
   /*****************************************************************************
   *  Init covariance Q if it is needed
@@ -439,6 +439,12 @@ void UKF::predictionIMMUKF(const double dt, const bool has_subscribed_vectormap)
     predictionLidarMeasurement(MotionModel::CTRV, num_lidar_direction_state_);
     predictionLidarMeasurement(MotionModel::RM, num_lidar_direction_state_);
   }
+  // else if(use_estimated_pose)
+  // {
+  //   predictionLidarMeasurement(MotionModel::CV, num_lidar_direction_state_);
+  //   predictionLidarMeasurement(MotionModel::CTRV, num_lidar_direction_state_);
+  //   predictionLidarMeasurement(MotionModel::RM, num_lidar_direction_state_);
+  // }
 }
 
 void UKF::findMaxZandS(Eigen::VectorXd& max_det_z, Eigen::MatrixXd& max_det_s)
@@ -488,6 +494,7 @@ void UKF::updateEachMotion(const double detection_probability, const double gate
   findMaxZandS(max_det_z, max_det_s);
   double Vk = M_PI * sqrt(gating_thres * max_det_s.determinant());
 
+  std::cerr << "pre" << std::endl;
   for (int motion_ind = 0; motion_ind < num_motion_model_; motion_ind++)
   {
     Eigen::MatrixXd x(x_cv_.rows(), x_cv_.cols());
@@ -675,6 +682,7 @@ void UKF::updateEachMotion(const double detection_probability, const double gate
       p_rm_ = updated_p;
     }
   }
+  std::cerr << "aaaa" << std::endl;
 }
 
 void UKF::updateMeasurementForCTRV(const std::vector<autoware_msgs::DetectedObject>& object_vec)
@@ -752,17 +760,22 @@ void UKF::updateIMMUKF(const double detection_probability, const double gate_pro
   /*****************************************************************************
   *  IMM Update
   ****************************************************************************/
+  std::cerr << "inside update a" << std::endl;
   // update kalman gain
   updateKalmanGain(MotionModel::CV);
+  std::cerr << "inside update a a" << std::endl;
   updateKalmanGain(MotionModel::CTRV);
+  std::cerr << "inside update a b" << std::endl;
   updateKalmanGain(MotionModel::RM);
 
+  std::cerr << "inside update b" << std::endl;
   // update state varibale x and state covariance p
   std::vector<double> lambda_vec;
   updateEachMotion(detection_probability, gate_probability, gating_thres, object_vec, lambda_vec);
   /*****************************************************************************
   *  IMM Merge Step
   ****************************************************************************/
+  std::cerr << "inside update c" << std::endl;
   updateModeProb(lambda_vec);
   mergeEstimationAndCovariance();
 }
@@ -1023,11 +1036,13 @@ void UKF::predictionMotion(const double delta_t, const int model_ind)
 
 void UKF::updateKalmanGain(const int motion_ind)
 {
+  std::cerr << "kalman gain a 0-1" << std::endl;
   Eigen::VectorXd x(x_cv_.rows());
   Eigen::MatrixXd x_sig_pred(x_sig_pred_cv_.rows(), x_sig_pred_cv_.cols());
   Eigen::VectorXd z_pred;
   Eigen::MatrixXd s_pred;
   int num_meas_state = 0;
+  std::cerr << "kalman gain a 0" << std::endl;
   if (motion_ind == MotionModel::CV)
   {
     x = x_cv_.col(0);
@@ -1036,9 +1051,11 @@ void UKF::updateKalmanGain(const int motion_ind)
     {
       num_meas_state = num_lidar_direction_state_;
       z_pred = Eigen::VectorXd(num_meas_state);
+      std::cerr << "kalman gain a a" << std::endl;
       z_pred = z_pred_lidar_direction_cv_;
       s_pred = Eigen::MatrixXd(num_meas_state, num_meas_state);
       s_pred = s_lidar_direction_cv_;
+      std::cerr << "kalman gain a b" << std::endl;
     }
     else
     {
@@ -1092,6 +1109,7 @@ void UKF::updateKalmanGain(const int motion_ind)
     }
   }
 
+  std::cerr << "kalman gain a " << std::endl;
   Eigen::MatrixXd cross_covariance = Eigen::MatrixXd(num_state_, num_meas_state);
   cross_covariance.fill(0.0);
   for (int i = 0; i < 2 * num_state_ + 1; i++)
@@ -1105,20 +1123,31 @@ void UKF::updateKalmanGain(const int motion_ind)
     {
       z_sig_point << x_sig_pred(0, i), x_sig_pred(1, i);
     }
+    std::cerr << "kalman gain a1 " << std::endl;
     Eigen::VectorXd z_diff = z_sig_point - z_pred;
     Eigen::VectorXd x_diff = x_sig_pred.col(i) - x;
 
-    x_diff(3) = normalizeAngle(x_diff(3));
+    std::cerr << "kalman gain a2 " << std::endl;
 
+    x_diff(3) = normalizeAngle(x_diff(3));
+    std::cerr << "kalman gain a2 "<< x_diff(3) << std::endl;
+
+    std::cerr << "kalman gain zsig "<< z_sig_point << std::endl;
+    std::cerr << "kalman gain zpred "<< z_pred << std::endl;
+    std::cerr << "kalman gain zdiff "<< z_diff(2) << std::endl;
     if (num_meas_state == num_lidar_direction_state_)
     {
       z_diff(2) = normalizeAngle(z_diff(2));
     }
+    std::cerr << "kalman gain a3 " << std::endl;
 
     cross_covariance = cross_covariance + weights_c_(i) * x_diff * z_diff.transpose();
+    std::cerr << "kalman gain a4 " << std::endl;
   }
+  std::cerr << "kalman gain b " << std::endl;
 
   Eigen::MatrixXd kalman_gain = cross_covariance * s_pred.inverse();
+  std::cerr << "kalman gain c " << std::endl;
 
   if (num_meas_state == num_lidar_direction_state_)
   {
@@ -1221,10 +1250,12 @@ void UKF::predictionLidarMeasurement(const int motion_ind, const int num_meas_st
   // add measurement noise covariance matrix
   s_pred += covariance_r;
 
+  std::cerr << "prediction aaaaa" << std::endl;
   if (num_meas_state == num_lidar_direction_state_)
   {
     if (motion_ind == MotionModel::CV)
     {
+      std::cerr <<"aaaa zpred " <<z_pred << std::endl;
       z_pred_lidar_direction_cv_ = z_pred;
       s_lidar_direction_cv_ = s_pred;
     }
@@ -1315,7 +1346,7 @@ void UKF::checkLaneDirectionAvailability(const autoware_msgs::DetectedObject& in
   }
 }
 
-void UKF::prediction(const bool use_sukf, const bool has_subscribed_vectormap, const double dt)
+void UKF::prediction(const bool use_sukf, const bool has_subscribed_vectormap, const bool use_estimated_pose, const double dt)
 {
   if (use_sukf)
   {
@@ -1323,7 +1354,7 @@ void UKF::prediction(const bool use_sukf, const bool has_subscribed_vectormap, c
   }
   else
   {
-    predictionIMMUKF(dt, has_subscribed_vectormap);
+    predictionIMMUKF(dt, has_subscribed_vectormap, use_estimated_pose);
   }
 }
 

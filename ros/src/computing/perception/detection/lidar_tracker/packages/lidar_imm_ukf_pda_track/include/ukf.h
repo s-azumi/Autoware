@@ -263,7 +263,7 @@ public:
 
   void predictionSUKF(const double dt, const bool has_subscribed_vectormap);
 
-  void predictionIMMUKF(const double dt, const bool has_subscribed_vectormap);
+  void predictionIMMUKF(const double dt, const bool has_subscribed_vectormap, const bool use_estimated_pose);
 
   void findMaxZandS(Eigen::VectorXd& max_det_z, Eigen::MatrixXd& max_det_s);
 
@@ -310,7 +310,7 @@ public:
   void update(const bool use_sukf, const double detection_probability, const double gate_probability,
               const double gating_thres, const std::vector<autoware_msgs::DetectedObject>& object_vec);
 
-  void prediction(const bool use_sukf, const bool has_subscribed_vectormap, const double dt);
+  void prediction(const bool use_sukf, const bool has_subscribed_vectormap, const bool use_estimated_pose, const double dt);
 };
 
 #endif /* UKF_H */
