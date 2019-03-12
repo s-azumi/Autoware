@@ -273,8 +273,8 @@ bool ImmUkfPda::updateDirection(const double smallest_nis, const int direction_t
   else if(direction_type == DirectionType::Pose)
   {
     modifyPoseByTrackedPose(in_object, target,   out_object);
-    target.predictionLidarMeasurement(MotionModel::CV, 3);
-    target.predictionLidarMeasurement(MotionModel::CTRV, 3);
+    // target.predictionLidarMeasurement(MotionModel::CV, 3);
+    // target.predictionLidarMeasurement(MotionModel::CTRV, 3);
 
     target.is_direction_cv_available_ = true;
     target.is_direction_ctrv_available_ = true;
@@ -815,10 +815,8 @@ void ImmUkfPda::tracker(const autoware_msgs::DetectedObjectArray& input,
   {
     initTracker(input, timestamp);
     makeOutput(input, matching_vec, detected_objects_output);
-    std::cerr << "end init " << std::endl;
     return;
   }
-  std::cerr << "second ite " << std::endl;
 
   double dt = (timestamp - timestamp_);
   timestamp_ = timestamp;
@@ -834,7 +832,6 @@ void ImmUkfPda::tracker(const autoware_msgs::DetectedObjectArray& input,
     {
       continue;
     }
-    std::cerr << "inside a " << std::endl;
     // prevent ukf not to explode
     if (targets_[i].p_merge_.determinant() > prevent_explosion_thres_ ||
         targets_[i].p_merge_(4, 4) > prevent_explosion_thres_)
@@ -842,33 +839,25 @@ void ImmUkfPda::tracker(const autoware_msgs::DetectedObjectArray& input,
       targets_[i].tracking_num_ = TrackingState::Die;
       continue;
     }
-    std::cerr << "inside b " << std::endl;
 
     targets_[i].prediction(use_sukf_, has_subscribed_vectormap_, use_estimated_pose_, dt);
-    std::cerr << "inside c " << std::endl;
 
     std::vector<autoware_msgs::DetectedObject> object_vec;
     bool success = probabilisticDataAssociation(input, dt, matching_vec, object_vec, targets_[i]);
-    std::cerr << "inside d " << std::endl;
     if (!success)
     {
       continue;
     }
 
-    std::cerr << "inside e " << std::endl;
     targets_[i].update(use_sukf_, detection_probability_, gate_probability_, gating_thres_, object_vec);
-    std::cerr << "inside f " << std::endl;
   }
   // end UKF process
-  std::cerr << "pose a " << std::endl;
 
   // making new ukf target for no data association objects
   makeNewTargets(timestamp, input, matching_vec);
-  std::cerr << "pose b " << std::endl;
 
   // static dynamic classification
   staticClassification();
-  std::cerr << "pose c " << std::endl;
 
   // making output for visualization
   makeOutput(input, matching_vec, detected_objects_output);
