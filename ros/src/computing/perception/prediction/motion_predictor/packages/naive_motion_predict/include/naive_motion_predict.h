@@ -51,6 +51,7 @@ private:
   double interval_sec_;
   int num_prediction_;
   double sensor_height_;
+  double minimum_prediction_velocity_threshold_;
 
   void objectsCallback(const autoware_msgs::DetectedObjectArray& input);
 
@@ -58,6 +59,7 @@ private:
                            visualization_msgs::Marker& predicted_line);
 
   void makePrediction(const autoware_msgs::DetectedObject& object,
+                      const double minimum_prediction_velocity_threshold,
                       std::vector<autoware_msgs::DetectedObject>& predicted_objects,
                       visualization_msgs::Marker& predicted_line);
 

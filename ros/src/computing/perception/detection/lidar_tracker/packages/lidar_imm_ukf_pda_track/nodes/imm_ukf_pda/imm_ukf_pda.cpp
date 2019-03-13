@@ -328,8 +328,11 @@ void ImmUkfPda::updateTargetWithAssociatedObject(const std::vector<autoware_msgs
 
 void ImmUkfPda::updateBehaviorState(const UKF& target, const bool use_sukf, autoware_msgs::DetectedObject& object)
 {
-  if ((target.mode_prob_cv_ > target.mode_prob_ctrv_ && target.mode_prob_cv_ > target.mode_prob_rm_)||
-      use_sukf)
+  if(use_sukf)
+  {
+    object.behavior_state = MotionModel::CV;
+  }
+  else if (target.mode_prob_cv_ > target.mode_prob_ctrv_ && target.mode_prob_cv_ > target.mode_prob_rm_)
   {
     object.behavior_state = MotionModel::CV;
   }
