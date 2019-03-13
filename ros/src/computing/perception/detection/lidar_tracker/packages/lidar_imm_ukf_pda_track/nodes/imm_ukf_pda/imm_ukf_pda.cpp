@@ -52,7 +52,7 @@ ImmUkfPda::ImmUkfPda()
   }
 
   // for estimated pose assisted tracking
-  private_nh_.param<bool>("use_estimated_pose", use_estimated_pose_, true);
+  private_nh_.param<bool>("use_estimated_pose", use_estimated_pose_, false);
 }
 
 void ImmUkfPda::run()
