@@ -134,7 +134,7 @@ void DecisionMakerNode::updateGoState(cstring_t& state_name, int status)
 
 void DecisionMakerNode::updateWaitState(cstring_t& state_name, int status)
 {
-  publishStoplineWaypointIdx(current_status_.closest_waypoint + 1);
+  publishStoplineWaypointIdx(current_status_.finalwaypoints.waypoints.at(2).gid);
 }
 
 void DecisionMakerNode::updateStopState(cstring_t& state_name, int status)
@@ -221,11 +221,14 @@ void DecisionMakerNode::exitOrderedStopState(cstring_t& state_name, int status)
 
   current_status_.prev_ordered_idx = -1;
 }
+
 void DecisionMakerNode::updateReservedStopState(cstring_t& state_name, int status)
 {
   publishStoplineWaypointIdx(current_status_.found_stopsign_idx);
-  if (current_status_.velocity <= stopped_vel_ && (current_status_.obstacle_waypoint + current_status_.closest_waypoint) == current_status_.found_stopsign_idx)
-    current_status_.prev_stopped_wpidx = current_status_.found_stopsign_idx;
+}
+void DecisionMakerNode::exitReservedStopState(cstring_t& state_name, int status)
+{
+  current_status_.prev_stopped_wpidx = current_status_.found_stopsign_idx;
 }
 
 }

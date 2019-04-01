@@ -179,6 +179,8 @@ void DecisionMakerNode::setupStateCallback(void)
                          std::bind(&DecisionMakerNode::exitOrderedStopState, this, std::placeholders::_1, 1));
   ctx_motion->setCallback(state_machine::CallbackType::UPDATE, "ReservedStop",
                          std::bind(&DecisionMakerNode::updateReservedStopState, this, std::placeholders::_1, 1));
+  ctx_motion->setCallback(state_machine::CallbackType::EXIT, "ReservedStop",
+                         std::bind(&DecisionMakerNode::exitReservedStopState, this, std::placeholders::_1, 1));
 
   ctx_vehicle->nextState("started");
   ctx_mission->nextState("started");
@@ -246,6 +248,8 @@ void DecisionMakerNode::initVectorMap(void)
     ROS_INFO("crossroads have not found\n");
     return;
   }
+
+  intersects.clear();
 
   for (const auto& cross_road : crossroads)
   {
