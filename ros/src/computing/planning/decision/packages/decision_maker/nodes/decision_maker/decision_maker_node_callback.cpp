@@ -53,6 +53,7 @@ void DecisionMakerNode::callbackFromConfig(const autoware_config_msgs::ConfigDec
   change_threshold_angle_ = msg.change_threshold_angle;
   goal_threshold_dist_ = msg.goal_threshold_dist;
   goal_threshold_vel_ = msg.goal_threshold_vel;
+  stopped_vel_ = msg.stopped_vel;
   disuse_vector_map_ = msg.disuse_vector_map;
 }
 
@@ -61,7 +62,7 @@ void DecisionMakerNode::callbackFromLightColor(const ros::MessageEvent<autoware_
   ROS_WARN("%s is not implemented", __func__);
 }
 
-void DecisionMakerNode::insertPointWithinCrossRoad(const std::vector<CrossRoadArea>& _intersects,
+void DecisionMakerNode::insertPointWithinCrossRoad(std::vector<CrossRoadArea>* _intersects,
                                                    autoware_msgs::LaneArray& lane_array)
 {
   for (auto& lane : lane_array.lanes)
@@ -73,22 +74,22 @@ void DecisionMakerNode::insertPointWithinCrossRoad(const std::vector<CrossRoadAr
       pp.y = wp.pose.pose.position.y;
       pp.z = wp.pose.pose.position.z;
 
-      for (auto& area : intersects)
+      for (int i=0; i<_intersects->size(); i++)
       {
-        if (CrossRoadArea::isInsideArea(&area, pp))
+        if (CrossRoadArea::isInsideArea(&_intersects->at(i), pp))
         {
           // area's
-          if (area.insideLanes.empty() || wp.gid != area.insideLanes.back().waypoints.back().gid + 1)
+          if (_intersects->at(i).insideLanes.empty() || wp.gid != _intersects->at(i).insideLanes.back().waypoints.back().gid + 1)
           {
             autoware_msgs::Lane nlane;
-            area.insideLanes.push_back(nlane);
-            area.bbox.pose.orientation = wp.pose.pose.orientation;
+            _intersects->at(i).insideLanes.push_back(nlane);
+            _intersects->at(i).bbox.pose.orientation = wp.pose.pose.orientation;
           }
-          area.insideLanes.back().waypoints.push_back(wp);
-          area.insideWaypoint_points.push_back(pp);  // geometry_msgs::point
-          // area.insideLanes.Waypoints.push_back(wp);//autoware_msgs::Waypoint
+          _intersects->at(i).insideLanes.back().waypoints.push_back(wp);
+          _intersects->at(i).insideWaypoint_points.push_back(pp);  // geometry_msgs::point
+
           // lane's wp
-          wp.wpstate.aid = area.area_id;
+          wp.wpstate.aid = _intersects->at(i).area_id;
         }
       }
     }
@@ -97,10 +98,12 @@ void DecisionMakerNode::insertPointWithinCrossRoad(const std::vector<CrossRoadAr
 
 void DecisionMakerNode::setWaypointState(autoware_msgs::LaneArray& lane_array)
 {
-  // intersects.clear();
-  insertPointWithinCrossRoad(intersects, lane_array);
+  // reset intersects
+  std::vector<CrossRoadArea> intersects_local = intersects;
+  insertPointWithinCrossRoad(&intersects_local, lane_array);
+
   // STR
-  for (auto& area : intersects)
+  for (auto& area : intersects_local)
   {
     for (auto& laneinArea : area.insideLanes)
     {
@@ -317,13 +320,23 @@ void DecisionMakerNode::callbackFromObstacleWaypoint(const std_msgs::Int32& msg)
 
 void DecisionMakerNode::callbackFromStopOrder(const std_msgs::Int32& msg)
 {
-  if (current_status_.closest_waypoint < msg.data)
+  autoware_msgs::VehicleLocation pub_msg;
+  pub_msg.header.stamp = ros::Time::now();
+  pub_msg.lane_array_id = current_status_.using_lane_array.id;
+  pub_msg.waypoint_index = -1;
+
+  if (current_status_.closest_waypoint < msg.data && msg.data < current_status_.using_lane_array.lanes.back().waypoints.back().gid)
+  {
+    current_status_.prev_ordered_idx = current_status_.ordered_stop_idx;
     current_status_.ordered_stop_idx = msg.data;
+    pub_msg.waypoint_index = msg.data;
+  }
+  else
+  {
+    current_status_.ordered_stop_idx = -1;
+  }
+
+  Pubs["stop_cmd_location"].publish(pub_msg);
 }
 
-void DecisionMakerNode::callbackFromClearOrder(const std_msgs::Int32& msg)
-{
-  if (current_status_.ordered_stop_idx == msg.data)
-    current_status_.ordered_stop_idx = -1;
-}
 }

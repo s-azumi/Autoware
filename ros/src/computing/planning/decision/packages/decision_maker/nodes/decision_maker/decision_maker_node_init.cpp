@@ -177,8 +177,12 @@ void DecisionMakerNode::setupStateCallback(void)
                          std::bind(&DecisionMakerNode::updateStoplineState, this, std::placeholders::_1, 0));
   ctx_motion->setCallback(state_machine::CallbackType::UPDATE, "OrderedStop",
                          std::bind(&DecisionMakerNode::updateOrderedStopState, this, std::placeholders::_1, 1));
+  ctx_motion->setCallback(state_machine::CallbackType::EXIT, "OrderedStop",
+                         std::bind(&DecisionMakerNode::exitOrderedStopState, this, std::placeholders::_1, 1));
   ctx_motion->setCallback(state_machine::CallbackType::UPDATE, "ReservedStop",
-                         std::bind(&DecisionMakerNode::updateStopState, this, std::placeholders::_1, 1));
+                         std::bind(&DecisionMakerNode::updateReservedStopState, this, std::placeholders::_1, 1));
+  ctx_motion->setCallback(state_machine::CallbackType::EXIT, "ReservedStop",
+                         std::bind(&DecisionMakerNode::exitReservedStopState, this, std::placeholders::_1, 1));
 
   ctx_vehicle->nextState("started");
   ctx_mission->nextState("started");
@@ -198,8 +202,6 @@ void DecisionMakerNode::createSubscriber(void)
   Subs["obstacle_waypoint"] =
       nh_.subscribe("/obstacle_waypoint", 1, &DecisionMakerNode::callbackFromObstacleWaypoint, this);
   Subs["change_flag"] = nh_.subscribe("/change_flag", 1, &DecisionMakerNode::callbackFromLaneChangeFlag, this);
-  Subs["stop_order_idx"] = nh_.subscribe("/state/stop_wpidx", 1, &DecisionMakerNode::callbackFromStopOrder, this);
-  Subs["clear_order_idx"] = nh_.subscribe("/state/clear_wpidx", 1, &DecisionMakerNode::callbackFromClearOrder, this);
 }
 void DecisionMakerNode::createPublisher(void)
 {
@@ -218,6 +220,7 @@ void DecisionMakerNode::createPublisher(void)
   Pubs["state_msg"] = private_nh_.advertise<autoware_msgs::State>("state_msg", 1, true);
   Pubs["state_overlay"] = private_nh_.advertise<jsk_rviz_plugins::OverlayText>("state_overlay", 1);
   Pubs["available_transition"] = private_nh_.advertise<std_msgs::String>("available_transition", 1, true);
+  Pubs["stop_cmd_location"] = private_nh_.advertise<autoware_msgs::VehicleLocation>("stop_location", 1, true);
 
   // for debug
   Pubs["target_velocity_array"] = nh_.advertise<std_msgs::Float64MultiArray>("target_velocity_array", 1);
@@ -247,6 +250,8 @@ void DecisionMakerNode::initVectorMap(void)
     ROS_INFO("crossroads have not found\n");
     return;
   }
+
+  intersects.clear();
 
   for (const auto& cross_road : crossroads)
   {
