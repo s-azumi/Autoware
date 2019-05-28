@@ -96,6 +96,7 @@ struct AutowareStatus
   autoware_msgs::Lane finalwaypoints;
   int closest_waypoint;
   int obstacle_waypoint;
+  int stopline_waypoint;
   int change_flag;
 
   // vehicle status
@@ -107,7 +108,7 @@ struct AutowareStatus
   int ordered_stop_idx;
   int prev_ordered_idx;
 
-  AutowareStatus(void) : closest_waypoint(-1), obstacle_waypoint(-1), velocity(0), found_stopsign_idx(-1), prev_stopped_wpidx(-1), ordered_stop_idx(-1), prev_ordered_idx(-1)
+  AutowareStatus(void) : closest_waypoint(-1), obstacle_waypoint(-1), stopline_waypoint(-1), velocity(0), found_stopsign_idx(-1), prev_stopped_wpidx(-1), ordered_stop_idx(-1), prev_ordered_idx(-1)
   {
   }
 
@@ -324,6 +325,7 @@ private:
   void callbackFromObstacleWaypoint(const std_msgs::Int32& msg);
   void callbackFromStopOrder(const std_msgs::Int32& msg);
   void callbackFromClearOrder(const std_msgs::Int32& msg);
+  void callbackFromStoplineWaypoint(const std_msgs::Int32& msg);
 
   void setEventFlag(cstring_t& key, const bool& value)
   {
