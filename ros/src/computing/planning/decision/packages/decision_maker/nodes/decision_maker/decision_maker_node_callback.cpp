@@ -49,6 +49,7 @@ void DecisionMakerNode::callbackFromConfig(const autoware_config_msgs::ConfigDec
   auto_mission_change_ = msg.auto_mission_change;
   use_fms_ = msg.use_fms;
   param_num_of_steer_behind_ = msg.num_of_steer_behind;
+  blinker_notice_time_ = msg.blinker_notice_time;
   change_threshold_dist_ = msg.change_threshold_dist;
   change_threshold_angle_ = msg.change_threshold_angle;
   goal_threshold_dist_ = msg.goal_threshold_dist;

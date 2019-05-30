@@ -1995,6 +1995,12 @@ params :
       min   : 0
       max   : 50
       v     : 20
+    - name  : blinker_notice_time
+      desc  : Time to turn on the blinker before pull off a road.
+      label : blinker_notice_time
+      min   : 0.0
+      max   : 30.0
+      v     : 3.0
     - name  : goal_threshold_dist
       desc  : Threshold for transitioning to the MissionComplete state(distance between the vehicle and the end of waypoints).
       label : goal_threshold_dist[m]

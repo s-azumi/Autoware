@@ -43,6 +43,14 @@ uint8_t DecisionMakerNode::getSteeringStateFromWaypoint(void)
 {
   static const double distance_to_target = param_num_of_steer_behind_;
   static const size_t ignore_idx = 0;
+  static double prev_notice_time = blinker_notice_time_;//sec
+  static bool start_blinker = false;
+  static double prev_blinker_dist = prev_notice_time * amathutils::kmph2mps(current_status_.velocity);//meter
+
+  if (!start_blinker)
+  {
+    prev_blinker_dist = prev_notice_time * amathutils::kmph2mps(current_status_.velocity);
+  }
 
   double distance = 0.0;
   geometry_msgs::Pose prev_pose = current_status_.pose;
@@ -59,12 +67,19 @@ uint8_t DecisionMakerNode::getSteeringStateFromWaypoint(void)
 
     state = current_status_.finalwaypoints.waypoints.at(idx).wpstate.steering_state;
 
-    if (state && (state != autoware_msgs::WaypointState::STR_STRAIGHT || distance >= distance_to_target))
+    if (state && (state != autoware_msgs::WaypointState::STR_STRAIGHT || distance >= distance_to_target+prev_blinker_dist))
     {
+      start_blinker = true;
       break;
     }
     prev_pose = current_status_.finalwaypoints.waypoints.at(idx).pose.pose;
   }
+
+  if (state != autoware_msgs::WaypointState::STR_LEFT && state != autoware_msgs::WaypointState::STR_RIGHT)
+  {
+    start_blinker = false;
+  }
+
   return state;
 }
 uint8_t DecisionMakerNode::getEventStateFromWaypoint(void)

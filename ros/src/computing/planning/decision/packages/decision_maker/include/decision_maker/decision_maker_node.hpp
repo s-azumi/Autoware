@@ -149,6 +149,7 @@ private:
   bool use_fms_;
   bool disuse_vector_map_;
   int param_num_of_steer_behind_;
+  double blinker_notice_time_;
   double change_threshold_dist_;
   double change_threshold_angle_;
   double goal_threshold_dist_;
@@ -332,6 +333,7 @@ public:
     , use_fms_(false)
     , disuse_vector_map_(false)
     , param_num_of_steer_behind_(30)
+    , blinker_notice_time_(3.0)
     , change_threshold_dist_(1.0)
     , change_threshold_angle_(15)
     , goal_threshold_dist_(3.0)
